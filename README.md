@@ -8,7 +8,7 @@ The work of [1] is based on our prior work in the following paper.
 
 [2] I. P. Roberts, A. Chopra, T. Novlan, S. Vishwanath, and J. G. Andrews, "Beamformed Self-Interference Measurements at 28 GHz: Spatial Insights and Angular Spread," _IEEE Trans. Wireless Commun._, Nov. 2022.
 
-Using the code in this repo, which is based on the model presented in [1], users can draw statistical realizations of self-interference in mmWave full-duplex systems. This can enable them to:
+Using the code in this repo, which is based on the model presented in [1], users can draw statistical realizations of self-interference in mmWave full-duplex systems. This can allow them to:
  - conduct statistical analyses of full-duplex mmWave communication systems;
  - develop methods to mitigate self-interference in full-duplex mmWave communication systems;
  - evaluate solutions for full-duplex mmWave communication systems.
