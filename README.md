@@ -40,7 +40,9 @@ Our statistical model of self-interference is based on two characteristics obser
 1. On a large scale (at a high level), there is a connection between the steering directions of the transmit and receive beams and the degree of self-interference incurred. Broadly speaking, some transmit and receive directions tend to incur high self-interference while others tend to incur low self-interference.
 2. On a small scale (within small spatial neighborhoods), the system incurs seemingly random amounts of self-interference. Slightly shifting the transmit and receive steering directions can dramatically alter the degree of self-interference coupled.
 
-![A block diagram of our model.](https://user-images.githubusercontent.com/52005199/221431446-ae3a8393-2c4b-41e8-a66c-fcdf258f63e4.svg)
+<p align="center">
+<img src="https://user-images.githubusercontent.com/52005199/221431446-ae3a8393-2c4b-41e8-a66c-fcdf258f63e4.svg"/>
+</p>
 
 We leverage these large-scale and small-scale characteristics to construct a stochastic model of self-interference that both statistically and spatially aligns with our measurements. 
 A block diagram summarizing our model is shown above.
@@ -49,7 +51,9 @@ The variance of this distribution is dictated by the mean parameter and other mo
 This approach allows our model to capture the large-scale spatial trends in self-interference along with the small-scale variability observed over small spatial neighborhoods.
 With appropriate parameterization, our model has the potential to be extended to other systems and environments beyond our own. 
 
-![Coupling clusters comprising the self-interference channel.](https://user-images.githubusercontent.com/52005199/221431451-9f7bec04-4659-4b9c-95d5-97deeb3f2345.svg)
+<p align="center">
+<img src="https://user-images.githubusercontent.com/52005199/221431451-9f7bec04-4659-4b9c-95d5-97deeb3f2345.svg"/>
+</p>
 
 To construct our model, we uncovered a coarse geometric approximation of the self-interference channel from within our measurements, which suggests that the dominant coupling between the transmit and receive arrays manifests as clusters of rays in a far-field manner (as illustrated above), rather than in a idealized near-field, spherical-wave fashion.
 This is a novel finding that can steer future work aiming to model self-interference MIMO channels in full-duplex mmWave systems.
@@ -68,7 +72,7 @@ The degree of self-interference incurred by the base station will depend on the 
 
 We can draw a statistical realization of this coupling for each beam pair across the codebooks using the script `main.m`, which implements our model in MATLAB.
 
-## Set System and Model Parameters
+### Set System and Model Parameters
 
 The first step is to set the desired system and model parameters. By default, the parameters provided in [1, Table II] can be used. 
 
@@ -97,7 +101,7 @@ beta = 42.53; % bias
 nu_squared = 126.091; % variance
 ```
 
-## Set Transmit and Receive Arrays
+### Set Transmit and Receive Arrays
 
 The transmit and receive array sizes can be modified by changing the following lines. Our arrays were 16x16 planar arrays, for instance. It is not clear how well our model will generalize to other array sizes.
 
@@ -107,7 +111,7 @@ M = 16; % number of rows
 N = 16; % number of columns
 ```
 
-## Define Transmit and Receive Codebooks
+### Define Transmit and Receive Codebooks
 
 The transmit and receive codebooks used at the full-duplex base station can be set by defining the steering directions of the codebooks' beams. The steering direction of each beam contains a component in azimuth and elevation (see [1, Fig. 2]). 
 
@@ -165,7 +169,7 @@ for idx_rx = 1:num_rx
 end
 ```
 
-## Constructing the Clustered Self-Interference Channel Approximation
+### Constructing the Clustered Self-Interference Channel Approximation
 
 The following portion of the code constructs the channel matrix used to estimate the neighborhood mean parameter.
 
@@ -210,15 +214,84 @@ end
 H = H ./ norm(H,'fro') .* sqrt(Nt*Nr);
 ```
 
-# .mat Files
+### Computing the Neighborhood Mean and Variance
 
-The `mat/` folder contains five `.mat` files corresponding to the five tables in our paper, each of which contains a lookup table (matrix) of fitted parameters. 
+The neighborhood mean for each transmit-receive beam pair can then be computed directly using the following.
 
-For instance, `params_normal_min.mat` corresponds to Table II in our paper and contains the following variables:
-- `lut_mu_min` - a matrix where the `(i,j)`-th entry is the fitted mean of the `j`-th azimuthal neighborhood and `i`-th elevational neighborhood
-- `lut_var_min` - a matrix where the `(i,j)`-th entry is the fitted variance of the `j`-th azimuthal neighborhood and `i`-th elevational neighborhood
-- `delta_az_list` - the azimuthal neighborhood size of each row in `lut_mu_min` and `lut_var_min`
-- `delta_el_list` - the elevational neighborhood size of each row in `lut_mu_min` and `lut_var_min`
+```
+% coupling power of each beam pair over H (Gamma)
+GG = abs(W' * H * F).^2;
+
+% compute mean (mu)
+mu = xi * 10 * log10(GG) + G_dB + EIRP_dBm - P_noise_dBm;
+```
+
+Likewise, the neighborhood variance can be drawn as follows.
+
+```
+% linear estimator
+var = alpha * mu + beta;
+
+% add random Gaussian noise
+var = var + sqrt(nu_squared) .* randn(num_rx,num_tx);
+
+% ensure variance is non-negative
+var(var < 0) = 0;
+```
+
+### Drawing Realizations of Self-Interference
+
+Self-interference for each beam pair is then straightforwardly drawn as follows. Note that `INR` is the interference-to-noise ratio (INR) of self-interference and has units of decibels (dB).
+
+```
+INR = mu + sqrt(var) .* randn(num_rx,num_tx);
+```
+
+If desired, `INR` can be bounded by setting `INR_bounds`. By default it is not bounded.
+
+```
+INR_bounds = [-Inf,Inf];
+INR(INR < INR_bounds(1)) = INR_bounds(1);
+INR(INR > INR_bounds(2)) = INR_bounds(2);
+```
+
+### Results
+
+The INR for each transmit-receive beam pair can then be plotted using the following.
+
+```
+figure(1);
+imagesc(INR);
+xlabel('Transmit Beam Index');
+ylabel('Receive Beam Index');
+c = colorbar('EastOutside');
+c.Label.Interpreter = 'latex';
+c.Label.String = ['Self-Interference, INR (dB)'];
+axis equal tight
+```
+
+This will produce a figure similar to the following. Each pixel represents the degree of self-interference incurred by the corresponding transmit-receive beam pair.
+
+<p align="center">
+<img src="https://user-images.githubusercontent.com/52005199/221433216-4fd2667e-8ecc-4cc6-9eaa-01de70647421.svg"/>
+</p>
+
+The distribution of this can be plotted as follows, producing a plot similar to the one shown below.
+
+```
+[f,x] = ecdf(INR(:));
+figure(2);
+plot(x,f,'k-');
+grid on;
+grid minor;
+xlabel('Self-Interference, INR (dB)');
+ylabel('Cumulative Probability');
+axis tight;
+```
+
+<p align="center">
+<img src="https://user-images.githubusercontent.com/52005199/221433220-befc149f-68c3-4978-8fd0-c0edc9ff64ed.svg"/>
+</p>
 
 # Questions and Feedback
 
