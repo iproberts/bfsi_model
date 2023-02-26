@@ -45,8 +45,8 @@ Nr = M * N;
 % 3. Define transmit and receive codebook steering directions.
 % -------------------------------------------------------------------------
 % transmit directions (e.g., transmit codebook)
-tx_dir_az = flip([-60:1:60]); % flip is not necessary
-tx_dir_el = flip([-10:1:10]);
+tx_dir_az = flip([-56:8:56]); % flip is not necessary
+tx_dir_el = flip([-8:8:8]);
 
 % each transmit az-el pair
 tx_dir_az_el_deg = [repelem(tx_dir_az(:),length(tx_dir_el)),repmat(tx_dir_el(:),length(tx_dir_az),1)];
@@ -70,6 +70,7 @@ Arx = arx.get_array_response(rx_dir_az_el_deg(:,1)*pi/180,rx_dir_az_el_deg(:,2)*
 % transmit and receive codebooks use conjugate beamforming
 F = Atx;
 W = Arx;
+
 
 % ensure beams in F are normalized
 for idx_tx = 1:num_tx
@@ -196,5 +197,5 @@ c = colorbar('EastOutside');
 c.Label.Interpreter = 'latex';
 c.Label.String = ['Self-Interference, INR (dB)'];
 axis equal tight
-shading interp;
+% shading interp;
 view(0,90);
