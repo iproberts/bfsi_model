@@ -57,24 +57,158 @@ This is a novel finding that can steer future work aiming to model self-interfer
 # Contents
 
 This repo contains the following MATLAB code:
- - a main script illustrating example usage
+ - a main script `main.m` illustrating example usage
  - an `array` object that can be used to create and interface with arbitrary antenna arrays
 
 # Example Usage
 
-The measurements and statistical characterization in [1] are particularly useful for drawing realizations of self-interference levels that a full-duplex mmWave platform may incur when transmitting while receiving in-band. We use interference-to-noise ratio (INR) to describe the level of self-interference experienced by such a system. When INR < 0 dB, the system is noise-limited, and when INR > 0 dB, it is self-interference-limited.
+Suppose a full-duplex mmWave base station employs a codebook of transmit beams that it uses to serve downlink and a codebook of receive beams that it uses to serve uplink. 
 
-To draw a realization of mmWave self-interference (i.e., of INR) for a random transmit beam and random receive beam, one can execute the following in MATLAB using our code.
+The degree of self-interference incurred by the base station will depend on the transmit beam and receive beam that it uses to serve downlink and uplink users. Each transmit-receive beam pair will couple a unique amount of self-interference. 
+
+We can draw a statistical realization of this coupling for each beam pair across the codebooks using the script `main.m`, which implements our model in MATLAB.
+
+## Set System and Model Parameters
+
+The first step is to set the desired system and model parameters. By default, the parameters provided in [1, Table II] can be used. 
 
 ```
-[m,s] = get_normal_params_min(0,0) % mean and variance
-INR_dB = normrnd(m,sqrt(s)) % INR in dB
+% System parameters
+EIRP_dBm = 60; % transmit array EIRP
+P_noise_dBm = -68; % receive array integrated noise power (includes amplification)
+
+% Model parameters: location and scale parameters for mu
+G_dB = -129.00; % location parameter
+xi = 0.502; % scale parameter
+
+% Model parameters: cluster centers and angular spreads for H_bar
+aod_az_list = [-174 126 -118 126]; % AoD azimuth
+aod_el_list = [0 0 0 0]; % AoD elevation
+aoa_az_list = [-122 -122 -122 118]; % AoA azimuth
+aoa_el_list = [0 0 0 0]; % AoA elevation
+spread_az = 4; % angular spread in azimuth
+spread_el = 3; % angular spread in elevation
+spread_az_res = 1; % angular spread resolution in azimuth
+spread_el_res = 1; % angular spread resolution in elevation
+
+% Model parameters: estimator and variance parameters for sigma^2
+alpha = -0.733; % slope
+beta = 42.53; % bias
+nu_squared = 126.091; % variance
 ```
 
-The first line fetches a mean `m` and variance `s`, which have been fitted from the measured INR distribution (see Fig. 5 in [1]).
+## Set Transmit and Receive Arrays
 
-The second line draws a realization of INR (in dB) from a normal distribution with mean `m` and standard deviation `sqrt(s)`.
+The transmit and receive array sizes can be modified by changing the following lines. Our arrays were 16x16 planar arrays, for instance. It is not clear how well our model will generalize to other array sizes.
 
+```
+% planar array size
+M = 16; % number of rows
+N = 16; % number of columns
+```
+
+## Define Transmit and Receive Codebooks
+
+The transmit and receive codebooks used at the full-duplex base station can be set by defining the steering directions of the codebooks' beams. The steering direction of each beam contains a component in azimuth and elevation (see [1, Fig. 2]). 
+
+In the example below, the transmit and receive codebooks are identical. Each codebook has beams that span in azimuth from -56 deg. to 56 deg. in 8 deg. steps and in elevation from -8 deg. to 8 deg. in 8 deg. steps. This amounts to a total of 45 beams in each codebook, meaning there are 2025 transmit-receive beam pairs.
+
+```
+% transmit directions (e.g., transmit codebook)
+tx_dir_az = flip([-56:8:56]); % flips are not necessary, just for plotting convenience
+tx_dir_el = flip([-8:8:8]);
+
+% receive directions (e.g., receive codebook)
+rx_dir_az = tx_dir_az; % assume same for simplicity
+rx_dir_el = tx_dir_el;
+```
+
+The azimuth-elevation of each transmit and receive steering direction can then be populated as follows.
+
+```
+% each transmit az-el pair
+tx_dir_az_el_deg = [repelem(tx_dir_az(:),length(tx_dir_el)),repmat(tx_dir_el(:),length(tx_dir_az),1)];
+num_tx = length(tx_dir_az_el_deg(:,1));
+
+% each receive az-el pair
+rx_dir_az_el_deg = [repelem(rx_dir_az(:),length(rx_dir_el)),repmat(rx_dir_el(:),length(rx_dir_az),1)];
+num_rx = length(rx_dir_az_el_deg(:,1));
+```
+
+To steer in a particular direction, we use conjugate beamforming (or matched filter beamforming). This can be achieved via the following, which uses the provided `array` object to fetch the array response vector of each array in each steering direction.
+
+```
+% array response vectors in each steering direction
+Atx = atx.get_array_response(tx_dir_az_el_deg(:,1)*pi/180,tx_dir_az_el_deg(:,2)*pi/180);
+Arx = arx.get_array_response(rx_dir_az_el_deg(:,1)*pi/180,rx_dir_az_el_deg(:,2)*pi/180);
+
+% transmit and receive codebooks use conjugate beamforming
+F = Atx;
+W = Arx;
+```
+
+Here, the `i`-th column in the matrix `F` contains the transmit beamforming vector that steers in the `i`-th direction of `tx_dir_az_el_deg`.
+
+It is very important that the energy of the transmit and receive beams be normalized properly. To ensure this is the case, the following is used.
+
+```
+% ensure beams in F are normalized
+for idx_tx = 1:num_tx
+    f = F(:,idx_tx);
+    F(:,idx_tx) = f ./ norm(f,2) .* sqrt(Nt);
+end
+
+% ensure beams in W are normalized
+for idx_rx = 1:num_rx
+    w = W(:,idx_rx);
+    W(:,idx_rx) = w ./ norm(w,2) .* sqrt(Nr);
+end
+```
+
+## Constructing the Clustered Self-Interference Channel Approximation
+
+The following portion of the code constructs the channel matrix used to estimate the neighborhood mean parameter.
+
+```
+H = zeros(Nr,Nt);
+for idx_clust = 1:length(aod_az_list)
+    % cluster AoD and AoA in az-el
+    aod_az = aod_az_list(idx_clust);
+    aod_el = aod_el_list(idx_clust);
+    aoa_az = aoa_az_list(idx_clust);
+    aoa_el = aoa_el_list(idx_clust);
+    
+    % azimuth spread
+    tmp = (-spread_az:spread_az_res:spread_az);
+    aod_list_az = tmp + aod_az;
+    aoa_list_az = tmp + aoa_az;
+    aod_list_az = aod_list_az(:) * pi/180;
+    aoa_list_az = aoa_list_az(:) * pi/180;
+    
+    % elevation spread
+    tmp = (-spread_el:spread_el_res:spread_el);
+    aod_list_el = tmp + aod_el;
+    aoa_list_el = tmp + aoa_el;
+    aod_list_el = aod_list_el(:) * pi/180;
+    aoa_list_el = aoa_list_el(:) * pi/180;
+    
+    % contributions of each ray
+    for idx_ray_az_tx = 1:length(aod_list_az)
+        for idx_ray_el_tx = 1:length(aod_list_el)
+            for idx_ray_az_rx = 1:length(aoa_list_az)
+                for idx_ray_el_rx = 1:length(aoa_list_el)
+                    vtx = atx.get_array_response(aod_list_az(idx_ray_az_tx),aod_list_el(idx_ray_el_tx));
+                    vrx = arx.get_array_response(aoa_list_az(idx_ray_az_rx),aoa_list_el(idx_ray_el_rx));
+                    H = H + vrx * vtx';
+                end
+            end
+        end
+    end
+end
+
+% normalize channel energy
+H = H ./ norm(H,'fro') .* sqrt(Nt*Nr);
+```
 
 # .mat Files
 
