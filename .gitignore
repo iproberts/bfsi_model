@@ -1,0 +1,9 @@
+# Windows default autosave extension
+*.asv
+
+# OSX / *nix default autosave extension
+*.m~
+
+data/**/meas-*.txt
+data/**/txSettings.txt
+data/**/rxSettings.txt
