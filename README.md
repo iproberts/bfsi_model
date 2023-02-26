@@ -40,7 +40,7 @@ Our statistical model of self-interference is based on two characteristics obser
 1. On a large scale (at a high level), there is a connection between the steering directions of the transmit and receive beams and the degree of self-interference incurred. Broadly speaking, some transmit and receive directions tend to incur high self-interference while others tend to incur low self-interference.
 2. On a small scale (within small spatial neighborhoods), the system incurs seemingly random amounts of self-interference. Slightly shifting the transmit and receive steering directions can dramatically alter the degree of self-interference coupled.
 
-![A block diagram of our model.](/block.svg, "A block diagram of our model.")
+![A block diagram of our model.](https://user-images.githubusercontent.com/52005199/221431446-ae3a8393-2c4b-41e8-a66c-fcdf258f63e4.svg)
 
 We leverage these large-scale and small-scale characteristics to construct a stochastic model of self-interference that both statistically and spatially aligns with our measurements. 
 A block diagram summarizing our model is shown above.
@@ -49,13 +49,10 @@ The variance of this distribution is dictated by the mean parameter and other mo
 This approach allows our model to capture the large-scale spatial trends in self-interference along with the small-scale variability observed over small spatial neighborhoods.
 With appropriate parameterization, our model has the potential to be extended to other systems and environments beyond our own. 
 
-![Coupling clusters comprising the self-interference channel.](/clusters.svg, "Coupling clusters comprising the self-interference channel.")
+![Coupling clusters comprising the self-interference channel.](https://user-images.githubusercontent.com/52005199/221431451-9f7bec04-4659-4b9c-95d5-97deeb3f2345.svg)
 
 To construct our model, we uncovered a coarse geometric approximation of the self-interference channel from within our measurements, which suggests that the dominant coupling between the transmit and receive arrays manifests as clusters of rays in a far-field manner (as illustrated above), rather than in a idealized near-field, spherical-wave fashion.
 This is a novel finding that can steer future work aiming to model self-interference MIMO channels in full-duplex mmWave systems.
-
-
-
 
 # Contents
 
