@@ -197,5 +197,4 @@ c = colorbar('EastOutside');
 c.Label.Interpreter = 'latex';
 c.Label.String = ['Self-Interference, INR (dB)'];
 axis equal tight
-% shading interp;
 view(0,90);
