@@ -71,7 +71,6 @@ Arx = arx.get_array_response(rx_dir_az_el_deg(:,1)*pi/180,rx_dir_az_el_deg(:,2)*
 F = Atx;
 W = Arx;
 
-
 % ensure beams in F are normalized
 for idx_tx = 1:num_tx
     f = F(:,idx_tx);
