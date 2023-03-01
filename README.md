@@ -2,11 +2,11 @@
 
 This repository contains code related to the following paper on modeling self-interference in full-duplex millimeter wave (mmWave) wireless communication systems.
 
-[1] I. P. Roberts, A. Chopra, T. Novlan, S. Vishwanath, and J. G. Andrews, "Spatial and Statistical Modeling of Multi-Panel Millimeter Wave Self-Interference," Submitted to _IEEE J. Sel. Areas Commun._, 2023.
+[1] I. P. Roberts, A. Chopra, T. Novlan, S. Vishwanath, and J. G. Andrews, "Spatial and Statistical Modeling of Multi-Panel Millimeter Wave Self-Interference," Submitted to _IEEE J. Sel. Areas Commun._, 2023, [PDF](https://ianproberts.com/pdf/pub/simodel.pdf).
 
-The work of [1] is based on our prior work in the following paper.
+The work of [1] is based on measurements collected in our prior work in the following paper.
 
-[2] I. P. Roberts, A. Chopra, T. Novlan, S. Vishwanath, and J. G. Andrews, "Beamformed Self-Interference Measurements at 28 GHz: Spatial Insights and Angular Spread," _IEEE Trans. Wireless Commun._, Nov. 2022.
+[2] I. P. Roberts, A. Chopra, T. Novlan, S. Vishwanath, and J. G. Andrews, "Beamformed Self-Interference Measurements at 28 GHz: Spatial Insights and Angular Spread," _IEEE Trans. Wireless Commun._, Nov. 2022, [PDF](https://ianproberts.com/pdf/pub/bfsi.pdf).
 
 Using the code in this repo, which is based on the model presented in [1], users can draw statistical realizations of self-interference in mmWave full-duplex systems. This can allow them to:
  - conduct statistical analyses of full-duplex mmWave communication systems;
@@ -27,6 +27,21 @@ If you use this code or our paper in your work, please cite [1] with the followi
 ```
 
 Related work can be found at https://ianproberts.com.
+
+# What is Self-Interference? 
+
+When a transceiver (a wireless device) attempts to transmit and receive at the same time using the same frequency spectrum, some of its transmitted signal will leak into its receiver, corrupting reception of a desired signal.
+This undesired leakage (or coupling) is called "self-interference". 
+
+This work is particularly interested in such self-interference systems operating at mmWave frequencies (roughly 30 GHz to 100 GHz).
+In mmWave systems, dense antenna arrays containing dozens or even hundreds of individual antennas are used to overcome high path loss at these high carrier frequencies. 
+They do this by forming very directional beams, focusing energy in a particular direction to increase received signal power. 
+
+<p align="center">
+<img src="https://user-images.githubusercontent.com/52005199/222208767-c359fd9d-0fe0-4814-a56b-46d1f3fd306d.svg"/>
+</p>
+
+This work is therefore interested in how much self-interference is coupled in full-duplex mmWave systems when using particular transmit and receive beams. Some transmit and receive beams will couple higher self-interference than others; this depends on the steering direction of the beams and on the (unknown) underlying self-interference channel. This work aims to model self-interference statistically and spatially in order to draw realizations that align with the levels that one would see in practice, based on our measurements.
 
 # What's The Difference Between [1] and [2]?
 
