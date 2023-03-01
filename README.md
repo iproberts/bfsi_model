@@ -32,8 +32,9 @@ Related work can be found at https://ianproberts.com.
 
 When a transceiver (a wireless device) attempts to transmit and receive at the same time using the same frequency spectrum, some of its transmitted signal will leak into its receiver, corrupting reception of a desired signal.
 This undesired leakage (or coupling) is called "self-interference". 
+Transmit and receiving at the same time using the same frequency spectrum is called "full-duplex" operation.
 
-This work is particularly interested in such self-interference systems operating at mmWave frequencies (roughly 30 GHz to 100 GHz).
+This work is particularly focused on self-interference in full-duplex systems operating at mmWave frequencies (roughly 30 GHz to 100 GHz).
 In mmWave systems, dense antenna arrays containing dozens or even hundreds of individual antennas are used to overcome high path loss at these high carrier frequencies. 
 They do this by forming very directional beams, focusing energy in a particular direction to increase received signal power. 
 
